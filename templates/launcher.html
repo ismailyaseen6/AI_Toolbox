@@ -537,13 +537,10 @@
             outputConsole.scrollTop = outputConsole.scrollHeight;
         }
 
-        function updateProgress(percent, message) {
+        function updateProgress(percent) {
             currentProgress = percent;
             progressBar.style.width = percent + '%';
             progressBar.textContent = Math.round(percent) + '%';
-            if (message) {
-                addOutput(message);
-            }
         }
 
         function updateStepStatus(stepElement, status) {
@@ -563,7 +560,8 @@
                 statusMessage.className = '';
                 updateStepStatus(setupStep, 'pending');
                 updateStepStatus(executionStep, 'pending');
-                updateProgress(0, 'Starting pipeline...');
+                updateProgress(0);
+                addOutput('Starting pipeline...');
                 progressSection.classList.add('active');
 
                 // Start pipeline
@@ -587,30 +585,40 @@
                             if (update.step === 'Setup') {
                                 updateStepStatus(setupStep, update.status);
                                 if (update.status === 'running') {
-                                    updateProgress(25, update.message);
+                                    updateProgress(25);
                                 } else if (update.status === 'completed') {
-                                    updateProgress(50, update.message);
+                                    updateProgress(50);
                                 } else if (update.status === 'error') {
-                                    updateProgress(50, update.message);
+                                    updateProgress(50);
                                 }
                             } else if (update.step === 'Execution') {
                                 updateStepStatus(executionStep, update.status);
                                 if (update.status === 'running') {
-                                    updateProgress(75, update.message);
+                                    updateProgress(75);
                                 } else if (update.status === 'completed') {
-                                    updateProgress(100, update.message);
+                                    updateProgress(100);
                                 } else if (update.status === 'error') {
-                                    updateProgress(75, update.message);
+                                    updateProgress(75);
+                                }
+                            } else if (update.step === 'Pipeline') {
+                                // Handle pipeline-level completion
+                                if (update.status === 'completed') {
+                                    updateProgress(100);
                                 }
                             }
 
-                            // Add output if present
-                            if (update.output) {
+                            // Add output if present (only once)
+                            if (update.output && update.output.trim()) {
                                 addOutput(update.output);
                             }
 
                             // Check if finished
                             if (update.finished) {
+                                // Ensure progress is at 100% if completed successfully
+                                if (update.status === 'completed') {
+                                    updateProgress(100);
+                                }
+                                
                                 startBtn.disabled = false;
                                 stopBtn.disabled = true;
                                 eventSource.close();

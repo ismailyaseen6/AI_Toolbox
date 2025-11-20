@@ -21,7 +21,7 @@ def run_batch_file(batch_file, step_name):
             'step': step_name,
             'status': 'running',
             'message': f'Starting {step_name}...',
-            'output': ''
+            'output': f'Starting {step_name}...'
         })
         
         # Run the batch file
@@ -40,7 +40,7 @@ def run_batch_file(batch_file, step_name):
             progress_queue.put({
                 'step': step_name,
                 'status': 'running',
-                'message': line.strip(),
+                'message': '',
                 'output': line.strip()
             })
         
@@ -51,7 +51,7 @@ def run_batch_file(batch_file, step_name):
                 'step': step_name,
                 'status': 'completed',
                 'message': f'{step_name} completed successfully',
-                'output': ''
+                'output': f'{step_name} completed successfully'
             })
             return True
         else:
@@ -59,7 +59,7 @@ def run_batch_file(batch_file, step_name):
                 'step': step_name,
                 'status': 'error',
                 'message': f'{step_name} failed with error code {current_process.returncode}',
-                'output': ''
+                'output': f'{step_name} failed with error code {current_process.returncode}'
             })
             return False
     except Exception as e:
