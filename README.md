@@ -2,6 +2,29 @@
 
 A collection of tools for fine-tuning, converting, and running language models.
 
+## Installation
+
+### Clone the Repository (with submodules)
+```bash
+git clone --recursive https://github.com/ismailyaseen6/AI_Toolbox.git
+cd AI_Toolbox
+```
+
+Or if you already cloned without `--recursive`:
+```bash
+git submodule update --init --recursive
+```
+
+### Setup Environment
+```bash
+setup.bat
+```
+
+This will:
+- Create a Python virtual environment
+- Install all required dependencies including PyTorch with CUDA support
+- Initialize the llama.cpp submodule
+
 ## Project Structure
 
 ```
