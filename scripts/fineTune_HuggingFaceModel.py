@@ -48,7 +48,8 @@ def load_model_and_tokenizer(model_name):
         model_name,
         dtype=torch.float16,
         device_map="auto",
-        quantization_config=quantization_config
+        quantization_config=quantization_config,
+        use_cache=False  # Disable cache for gradient checkpointing compatibility
     )
     
     return model, tokenizer
@@ -72,15 +73,58 @@ def setup_lora(model):
 
 def prepare_dataset(tokenizer, dataset_name):
     """Load and tokenize the dataset."""
-    dataset = load_dataset(dataset_name, split="train")
+    try:
+        # Try loading with train split first
+        dataset = load_dataset(dataset_name, split="train")
+    except Exception as e:
+        print(f"Could not load 'train' split: {e}")
+        try:
+            # Try loading test split if train doesn't exist
+            dataset = load_dataset(dataset_name, split="test")
+            print("Using 'test' split instead")
+        except Exception as e2:
+            print(f"Could not load 'test' split: {e2}")
+            # Load entire dataset without specifying split
+            dataset = load_dataset(dataset_name)
+            # Get the first available split
+            if isinstance(dataset, dict):
+                split_name = list(dataset.keys())[0]
+                dataset = dataset[split_name]
+                print(f"Using '{split_name}' split")
+            else:
+                print("Using default dataset structure")
+    
+    # Limit dataset size for faster training (take first 1000 samples)
+    if len(dataset) > 1000:
+        dataset = dataset.select(range(1000))
+        print(f"Limited dataset to 1000 samples for faster training")
     
     def tokenize_function(examples):
-        texts = [
-            f"Instruction: {instr}\n{f'Context: {ctx}\n' if ctx else ''}Response: {resp}"
-            for instr, ctx, resp in zip(
-                examples["instruction"], examples["context"], examples["response"]
-            )
-        ]
+        # Try to detect the dataset structure and adapt
+        try:
+            texts = [
+                f"Instruction: {instr}\n{f'Context: {ctx}\n' if ctx else ''}Response: {resp}"
+                for instr, ctx, resp in zip(
+                    examples["instruction"], examples["context"], examples["response"]
+                )
+            ]
+        except KeyError:
+            # If the expected columns don't exist, try alternative formats
+            if "text" in examples:
+                texts = examples["text"]
+            elif "prompt" in examples and "completion" in examples:
+                texts = [f"{p}\n{c}" for p, c in zip(examples["prompt"], examples["completion"])]
+            elif "question" in examples and "answer" in examples:
+                texts = [f"Question: {q}\nAnswer: {a}" for q, a in zip(examples["question"], examples["answer"])]
+            else:
+                # Fallback: use the first text-like column
+                text_columns = [col for col in examples.keys() if isinstance(examples[col][0], str)]
+                if text_columns:
+                    texts = examples[text_columns[0]]
+                    print(f"Using column '{text_columns[0]}' as text source")
+                else:
+                    raise ValueError(f"Could not find suitable text columns in dataset. Available columns: {list(examples.keys())}")
+        
         result = tokenizer(texts, truncation=True, padding="max_length", max_length=MAX_LENGTH)
         result["labels"] = result["input_ids"]
         return result

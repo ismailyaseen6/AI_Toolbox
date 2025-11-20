@@ -292,27 +292,6 @@
             font-weight: 600;
         }
 
-        .progress-bar-container {
-            width: 100%;
-            height: 30px;
-            background: #e0e0e0;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 1.5rem;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            width: 0%;
-            transition: width 0.5s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-        }
-
         .output-console {
             background: #1e1e1e;
             color: #d4d4d4;
@@ -435,10 +414,6 @@
         </div>
 
         <div id="progressSection" class="progress-section">
-            <div class="progress-bar-container">
-                <div id="progressBar" class="progress-bar">0%</div>
-            </div>
-
             <div class="step-indicator">
                 <div id="setupStep" class="step pending">
                     <div class="step-icon">1</div>
@@ -462,7 +437,6 @@
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const progressSection = document.getElementById('progressSection');
-        const progressBar = document.getElementById('progressBar');
         const outputConsole = document.getElementById('outputConsole');
         const statusMessage = document.getElementById('statusMessage');
         const setupStep = document.getElementById('setupStep');
@@ -471,7 +445,6 @@
         const refreshConfigBtn = document.getElementById('refreshConfigBtn');
 
         let eventSource = null;
-        let currentProgress = 0;
 
         // Configuration management
         async function loadConfig() {
@@ -537,12 +510,6 @@
             outputConsole.scrollTop = outputConsole.scrollHeight;
         }
 
-        function updateProgress(percent) {
-            currentProgress = percent;
-            progressBar.style.width = percent + '%';
-            progressBar.textContent = Math.round(percent) + '%';
-        }
-
         function updateStepStatus(stepElement, status) {
             stepElement.className = 'step ' + status;
         }
@@ -560,7 +527,6 @@
                 statusMessage.className = '';
                 updateStepStatus(setupStep, 'pending');
                 updateStepStatus(executionStep, 'pending');
-                updateProgress(0);
                 addOutput('Starting pipeline...');
                 progressSection.classList.add('active');
 
@@ -581,30 +547,11 @@
                             
                             if (update.heartbeat) return;
 
-                            // Update progress based on step
+                            // Update step status
                             if (update.step === 'Setup') {
                                 updateStepStatus(setupStep, update.status);
-                                if (update.status === 'running') {
-                                    updateProgress(25);
-                                } else if (update.status === 'completed') {
-                                    updateProgress(50);
-                                } else if (update.status === 'error') {
-                                    updateProgress(50);
-                                }
                             } else if (update.step === 'Execution') {
                                 updateStepStatus(executionStep, update.status);
-                                if (update.status === 'running') {
-                                    updateProgress(75);
-                                } else if (update.status === 'completed') {
-                                    updateProgress(100);
-                                } else if (update.status === 'error') {
-                                    updateProgress(75);
-                                }
-                            } else if (update.step === 'Pipeline') {
-                                // Handle pipeline-level completion
-                                if (update.status === 'completed') {
-                                    updateProgress(100);
-                                }
                             }
 
                             // Add output if present (only once)
@@ -614,11 +561,6 @@
 
                             // Check if finished
                             if (update.finished) {
-                                // Ensure progress is at 100% if completed successfully
-                                if (update.status === 'completed') {
-                                    updateProgress(100);
-                                }
-                                
                                 startBtn.disabled = false;
                                 stopBtn.disabled = true;
                                 eventSource.close();
