@@ -1,0 +1,13 @@
+accelerate>=0.34.0
+transformers
+huggingface_hub
+bitsandbytes
+peft
+datasets
+sentencepiece
+ollama
+# PyTorch with CUDA 12.4 support (for RTX 4070)
+# Install with: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+torch>=2.6.0
+torchvision>=0.21.0
+torchaudio>=2.6.0
