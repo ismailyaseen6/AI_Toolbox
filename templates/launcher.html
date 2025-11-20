@@ -44,6 +44,104 @@
             font-size: 1.1rem;
         }
 
+        .config-section {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .config-section h3 {
+            color: #856404;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .config-form {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group small {
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .config-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-save {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-save:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(40, 167, 69, 0.4);
+        }
+
+        .current-config {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .current-config h4 {
+            color: #1976d2;
+            margin-bottom: 0.5rem;
+        }
+
+        .config-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #bbdefb;
+        }
+
+        .config-item:last-child {
+            border-bottom: none;
+        }
+
+        .config-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .config-value {
+            color: #333;
+            font-family: 'Consolas', monospace;
+        }
+
         .pipeline-info {
             background: #f8f9fa;
             border-radius: 12px;
@@ -269,6 +367,52 @@
         <h1>🚀 AI Toolbox Launcher</h1>
         <p class="subtitle">Automated Setup and Execution Pipeline</p>
 
+        <div class="config-section">
+            <h3>⚙️ Model Configuration</h3>
+            <form id="configForm" class="config-form">
+                <div class="form-group">
+                    <label for="modelId">HuggingFace Model ID</label>
+                    <input type="text" id="modelId" name="modelId" value="{{ config.model_id }}" 
+                           placeholder="e.g., google/gemma-3-1b-it" required>
+                    <small>Enter any HuggingFace model ID (e.g., google/gemma-3-1b-it, microsoft/phi-2, mistralai/Mistral-7B-v0.1)</small>
+                </div>
+                <div class="form-group">
+                    <label for="datasetName">Dataset Name (Optional)</label>
+                    <input type="text" id="datasetName" name="datasetName" value="{{ config.dataset_name }}" 
+                           placeholder="databricks/databricks-dolly-15k">
+                    <small>Leave default or specify your own dataset</small>
+                </div>
+                <div class="config-actions">
+                    <button type="submit" class="btn btn-save">
+                        <span>💾 Save Configuration</span>
+                    </button>
+                    <button type="button" id="refreshConfigBtn" class="btn btn-start">
+                        <span>🔄 Refresh</span>
+                    </button>
+                </div>
+            </form>
+
+            <div class="current-config">
+                <h4>Current Configuration</h4>
+                <div class="config-item">
+                    <span class="config-label">Model Name:</span>
+                    <span class="config-value" id="currentModelName">{{ config.model_name }}</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Base Directory:</span>
+                    <span class="config-value" id="currentBaseDir">{{ config.base_model_dir }}</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">GGUF Filename:</span>
+                    <span class="config-value" id="currentGgufName">{{ config.gguf_filename }}</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Ollama Model:</span>
+                    <span class="config-value" id="currentOllamaName">{{ config.ollama_model_name }}</span>
+                </div>
+            </div>
+        </div>
+
         <div class="pipeline-info">
             <h3>Pipeline Steps</h3>
             <ul class="pipeline-steps">
@@ -323,9 +467,67 @@
         const statusMessage = document.getElementById('statusMessage');
         const setupStep = document.getElementById('setupStep');
         const executionStep = document.getElementById('executionStep');
+        const configForm = document.getElementById('configForm');
+        const refreshConfigBtn = document.getElementById('refreshConfigBtn');
 
         let eventSource = null;
         let currentProgress = 0;
+
+        // Configuration management
+        async function loadConfig() {
+            try {
+                const response = await fetch('/config');
+                const config = await response.json();
+                
+                document.getElementById('modelId').value = config.model_id;
+                document.getElementById('datasetName').value = config.dataset_name;
+                document.getElementById('currentModelName').textContent = config.model_name;
+                document.getElementById('currentBaseDir').textContent = config.base_model_dir;
+                document.getElementById('currentGgufName').textContent = config.gguf_filename;
+                document.getElementById('currentOllamaName').textContent = config.ollama_model_name;
+            } catch (error) {
+                console.error('Error loading config:', error);
+                alert('Failed to load configuration');
+            }
+        }
+
+        configForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const modelId = document.getElementById('modelId').value.trim();
+            const datasetName = document.getElementById('datasetName').value.trim();
+            
+            if (!modelId) {
+                alert('Please enter a model ID');
+                return;
+            }
+
+            try {
+                const response = await fetch('/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model_id: modelId,
+                        dataset_name: datasetName || null
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('✅ Configuration saved successfully!\n\nModel: ' + data.config.model_id);
+                    loadConfig();
+                } else {
+                    alert('❌ Error: ' + (data.error || 'Failed to save configuration'));
+                }
+            } catch (error) {
+                alert('❌ Error saving configuration: ' + error.message);
+            }
+        });
+
+        refreshConfigBtn.addEventListener('click', loadConfig);
 
         function addOutput(text) {
             const line = document.createElement('div');

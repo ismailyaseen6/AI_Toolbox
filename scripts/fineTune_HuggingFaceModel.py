@@ -9,14 +9,27 @@ from transformers import (
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from datasets import load_dataset
 from huggingface_hub import snapshot_download
+import sys
+import os
 
-model_id = "google/gemma-3-1b-it"
-snapshot_download(repo_id= model_id, local_dir="./Outputs/gemma-3-1b-it", local_dir_use_symlinks=False, revision="main")
+# Add parent directory to path to import config
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import get_model_config
+
+cfg = get_model_config()
+print(f"Using model: {cfg['model_id']}")
+print(f"Base model directory: {cfg['base_model_dir']}")
+print(f"Fine-tuned output: {cfg['fine_tuned_dir']}")
+
+# Download if not exists
+if not os.path.exists(cfg['base_model_dir']):
+    print("Downloading model...")
+    snapshot_download(repo_id=cfg['model_id'], local_dir=cfg['base_model_dir'], local_dir_use_symlinks=False, revision="main")
 
 # Configuration
-MODEL_NAME = "./Outputs/gemma-3-1b-it"
-DATASET_NAME = "databricks/databricks-dolly-15k"
-OUTPUT_DIR = "./Outputs/fine-tuned-gemma-3-1b-it-yaseen"
+MODEL_NAME = cfg['base_model_dir']
+DATASET_NAME = cfg['dataset_name']
+OUTPUT_DIR = cfg['fine_tuned_dir']
 MAX_LENGTH = 512
 
 
@@ -87,7 +100,7 @@ def main():
     
     # Training configuration
     training_args = TrainingArguments(
-        output_dir="./Outputs/results",
+        output_dir=cfg['results_dir'],
         per_device_train_batch_size=8,  # Increased for RTX 4070
         gradient_accumulation_steps=1,
         optim="paged_adamw_8bit",  # Use 8bit optimizer for better memory efficiency

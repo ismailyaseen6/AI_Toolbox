@@ -1,6 +1,14 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import sys
+import os
 
-model_name = "google/gemma-3-1b-it"
+# Add parent directory to path to import config
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import get_model_config
+
+cfg = get_model_config()
+model_name = cfg['model_id']
+print(f"Using model: {model_name}")
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(

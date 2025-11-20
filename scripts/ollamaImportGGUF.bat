@@ -6,11 +6,9 @@ echo Ollama GGUF Model Import Script
 echo ============================================
 echo.
 
-REM Set the GGUF file path
-set "GGUF_FILE=Outputs\gemma-3-1b-it-yaseen.gguf"
-
-REM Set the model name in Ollama
-set "MODEL_NAME=gemma-3-1b-it-yaseen"
+REM Get configuration values
+for /f "delims=" %%i in ('python get_config_value.py gguf_path') do set "GGUF_FILE=%%i"
+for /f "delims=" %%i in ('python get_config_value.py ollama_model_name') do set "MODEL_NAME=%%i"
 
 REM Check if GGUF file exists
 if not exist "%GGUF_FILE%" (

@@ -1,0 +1,4 @@
+{
+  "model_id": "google/gemma-3-270m-it",
+  "dataset_name": "databricks/databricks-dolly-15k"
+}

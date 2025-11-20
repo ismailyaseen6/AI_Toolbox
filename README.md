@@ -2,6 +2,23 @@
 
 A collection of tools for fine-tuning, converting, and running language models.
 
+## 🚀 Quick Configuration
+
+**NEW: Easily switch between any HuggingFace model!**
+
+```bash
+# Configure your model
+python configure.py set google/gemma-3-1b-it
+
+# Or use interactive mode
+python configure.py
+
+# View current configuration
+python configure.py show
+```
+
+All scripts automatically use your configured model. See [CONFIGURATION.md](CONFIGURATION.md) for details.
+
 ## Installation
 
 ### Clone the Repository (with submodules)
@@ -54,20 +71,31 @@ AI_Toolbox/
 
 ## Quick Start
 
-### Initial Setup
+### 1. Configure Your Model
+```bash
+# Set your HuggingFace model
+python configure.py set google/gemma-3-1b-it
+
+# Or try another model
+python configure.py set mistralai/Mistral-7B-v0.1
+```
+
+### 2. Initial Setup
 ```bash
 setup.bat
 ```
 
-### Full Pipeline (Fine-tune → Merge → Convert)
+### 3. Full Pipeline (Fine-tune → Merge → Convert)
 ```bash
 Run.bat
 ```
 
-### Import to Ollama
+### 4. Import to Ollama
 ```bash
 ollamaImportGGUF.bat
 ```
+
+**Note**: You can change the model at any time by running `python configure.py` again!
 
 ## Scripts
 

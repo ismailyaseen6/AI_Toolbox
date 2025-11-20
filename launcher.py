@@ -1,9 +1,10 @@
-from flask import Flask, render_template, jsonify, Response
+from flask import Flask, render_template, jsonify, Response, request
 import subprocess
 import threading
 import time
 import os
 import queue
+from config import get_model_config, save_config
 
 app = Flask(__name__)
 
@@ -122,7 +123,34 @@ def execute_pipeline():
 @app.route('/')
 def index():
     """Main page"""
-    return render_template('launcher.html')
+    cfg = get_model_config()
+    return render_template('launcher.html', config=cfg)
+
+@app.route('/config', methods=['GET'])
+def get_config():
+    """Get current configuration"""
+    try:
+        cfg = get_model_config()
+        return jsonify(cfg)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/config', methods=['POST'])
+def update_config():
+    """Update configuration"""
+    try:
+        data = request.json
+        model_id = data.get('model_id')
+        dataset_name = data.get('dataset_name')
+        
+        if not model_id:
+            return jsonify({'error': 'model_id is required'}), 400
+        
+        save_config(model_id, dataset_name)
+        cfg = get_model_config()
+        return jsonify({'message': 'Configuration updated', 'config': cfg})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/start', methods=['POST'])
 def start_pipeline():
